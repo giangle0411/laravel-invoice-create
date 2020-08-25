@@ -38,16 +38,12 @@
                             </div>
                         </div>
                         <div class="col invoice-details">
-                            <h1 class="invoice-id">
-                                INVOICE {INSERT REFERENCE HERE}
-                            </h1>
+                            <h1 class="invoice-id">INVOICE #{{ invoiceId }}</h1>
                             <div class="date">
-                                Date of Invoice: {INSERT DATE OF INVOICE HERE}
+                                Date of Invoice:
+                                {{ today }}
                             </div>
-                            <div class="date">
-                                Due Date: {INSERT DATE OF INVOICE HERE + 14
-                                DAYS}
-                            </div>
+                            <div class="date">Due Date: {{ dueDate }}</div>
                         </div>
                     </div>
 
@@ -68,6 +64,7 @@
                                 <th class="text-right">PRICE</th>
                                 <th class="text-right">QUANTITY</th>
                                 <th class="text-right">TOTAL</th>
+                                <th class="text-right">ACTION</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -90,33 +87,53 @@
                                             invoiceItem.product.price
                                     }}
                                 </td>
+                                <td>
+                                    <div
+                                        @click="removeProduct(index)"
+                                        class="btn btn-danger"
+                                    >
+                                        Delete
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="2"></td>
                                 <td colspan="2">SUBTOTAL</td>
-                                <td>{TOTAL SUBTRACTED BY 25%}</td>
+                                <td>{{ subTotal }}</td>
                             </tr>
                             <tr>
                                 <td colspan="2"></td>
                                 <td colspan="2">TAX 25%</td>
-                                <td>{25% OF TOTAL}</td>
+                                <td>{{ taxPrice }}</td>
                             </tr>
                             <tr>
                                 <td colspan="2"></td>
                                 <td colspan="2">GRAND TOTAL</td>
-                                <td>{TOTAL}</td>
+                                <td>{{ totalPrice }}</td>
                             </tr>
                         </tfoot>
                     </table>
-                    <div class="thanks">Thank you!</div>
+                    <div class="thanks">
+                        Thank you!
+                    </div>
                     <div class="notices">
                         <div>NOTICE:</div>
                         <div class="notice">
                             A finance charge of 1.5% will be made on unpaid
                             balances after due date.
                         </div>
+                    </div>
+                    <div
+                        v-if="loading == false"
+                        class="btn btn-success mt-2"
+                        @click="saveInvoice"
+                    >
+                        Save Invoice
+                    </div>
+                    <div v-if="loading == true" class="btn btn-secondary">
+                        Loading
                     </div>
                 </main>
                 <footer>
@@ -181,6 +198,9 @@ export default {
     },
     data() {
         return {
+            totalPrice: 0,
+            subTotal: 0,
+            taxPrice: 0,
             loading: false,
             insertNewProductModal: false,
             newItem: {
@@ -228,6 +248,56 @@ export default {
                 selectedProduct
             );
             this.invoiceItems.push(newRow);
+            this.CalculateTotalPrice();
+        },
+        CalculateTotalPrice() {
+            let totalPrice = 0;
+
+            this.invoiceItems.forEach((item, index) => {
+                totalPrice += item.quantity * item.product.price;
+            });
+            this.totalPrice = totalPrice;
+            this.taxPrice = this.totalPrice * 0.25;
+            this.subTotal = this.totalPrice - this.taxPrice;
+        },
+        removeProduct(index) {
+            this.invoiceItems.splice(index, 1);
+        },
+        saveInvoice() {
+            this.loading = true;
+            Vue.axios
+                .post("/invoice/save", {
+                    invoiceItems: this.invoiceItems,
+                    totalPrice: this.totalPrice,
+                    subTotal: this.subTotal,
+                    taxPrice: this.taxPrice
+                })
+                .then(response => {
+                    let data = response.data;
+                    if (data.success == true) {
+                        window.location = "/invoice";
+                    }
+                    this.loading = false;
+                })
+                .catch(error => {
+                    this.loading = false;
+                });
+        }
+    },
+    computed: {
+        today() {
+            let today = new Date().toLocaleString("en-AU");
+            return today.split(",")[0];
+        },
+        dueDate() {
+            let today = new Date();
+            let due = new Date(today.setDate(today.getDate() + 14))
+                .toLocaleString("en-AU")
+                .split(",")[0];
+            return due;
+        },
+        invoiceId() {
+            return Math.floor(Math.random() * 100000) + 1;
         }
     }
 };

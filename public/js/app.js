@@ -2115,6 +2115,23 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   components: {
@@ -2125,6 +2142,9 @@ __webpack_require__.r(__webpack_exports__);
   },
   data: function data() {
     return {
+      totalPrice: 0,
+      subTotal: 0,
+      taxPrice: 0,
       loading: false,
       insertNewProductModal: false,
       newItem: {
@@ -2168,6 +2188,54 @@ __webpack_require__.r(__webpack_exports__);
       });
       var newRow = this.createNewItemRow(this.newItem.invoice_item_product_id, this.newItem.quantity, selectedProduct.price, selectedProduct);
       this.invoiceItems.push(newRow);
+      this.CalculateTotalPrice();
+    },
+    CalculateTotalPrice: function CalculateTotalPrice() {
+      var totalPrice = 0;
+      this.invoiceItems.forEach(function (item, index) {
+        totalPrice += item.quantity * item.product.price;
+      });
+      this.totalPrice = totalPrice;
+      this.taxPrice = this.totalPrice * 0.25;
+      this.subTotal = this.totalPrice - this.taxPrice;
+    },
+    removeProduct: function removeProduct(index) {
+      this.invoiceItems.splice(index, 1);
+    },
+    saveInvoice: function saveInvoice() {
+      var _this3 = this;
+
+      this.loading = true;
+      Vue.axios.post("/invoice/save", {
+        invoiceItems: this.invoiceItems,
+        totalPrice: this.totalPrice,
+        subTotal: this.subTotal,
+        taxPrice: this.taxPrice
+      }).then(function (response) {
+        var data = response.data;
+
+        if (data.success == true) {
+          window.location = "/invoice";
+        }
+
+        _this3.loading = false;
+      })["catch"](function (error) {
+        _this3.loading = false;
+      });
+    }
+  },
+  computed: {
+    today: function today() {
+      var today = new Date().toLocaleString("en-AU");
+      return today.split(",")[0];
+    },
+    dueDate: function dueDate() {
+      var today = new Date();
+      var due = new Date(today.setDate(today.getDate() + 14)).toLocaleString("en-AU").split(",")[0];
+      return due;
+    },
+    invoiceId: function invoiceId() {
+      return Math.floor(Math.random() * 100000) + 1;
     }
   }
 });
@@ -37836,7 +37904,27 @@ var render = function() {
           _vm._m(0),
           _vm._v(" "),
           _c("main", [
-            _vm._m(1),
+            _c("div", { staticClass: "row contacts" }, [
+              _vm._m(1),
+              _vm._v(" "),
+              _c("div", { staticClass: "col invoice-details" }, [
+                _c("h1", { staticClass: "invoice-id" }, [
+                  _vm._v("INVOICE #" + _vm._s(_vm.invoiceId))
+                ]),
+                _vm._v(" "),
+                _c("div", { staticClass: "date" }, [
+                  _vm._v(
+                    "\n                            Date of Invoice:\n                            " +
+                      _vm._s(_vm.today) +
+                      "\n                        "
+                  )
+                ]),
+                _vm._v(" "),
+                _c("div", { staticClass: "date" }, [
+                  _vm._v("Due Date: " + _vm._s(_vm.dueDate))
+                ])
+              ])
+            ]),
             _vm._v(" "),
             _c("div", [
               _c(
@@ -37898,19 +37986,87 @@ var render = function() {
                             ) +
                             "\n                            "
                         )
+                      ]),
+                      _vm._v(" "),
+                      _c("td", [
+                        _c(
+                          "div",
+                          {
+                            staticClass: "btn btn-danger",
+                            on: {
+                              click: function($event) {
+                                return _vm.removeProduct(index)
+                              }
+                            }
+                          },
+                          [
+                            _vm._v(
+                              "\n                                    Delete\n                                "
+                            )
+                          ]
+                        )
                       ])
                     ])
                   }),
                   0
                 ),
                 _vm._v(" "),
-                _vm._m(3)
+                _c("tfoot", [
+                  _c("tr", [
+                    _c("td", { attrs: { colspan: "2" } }),
+                    _vm._v(" "),
+                    _c("td", { attrs: { colspan: "2" } }, [_vm._v("SUBTOTAL")]),
+                    _vm._v(" "),
+                    _c("td", [_vm._v(_vm._s(_vm.subTotal))])
+                  ]),
+                  _vm._v(" "),
+                  _c("tr", [
+                    _c("td", { attrs: { colspan: "2" } }),
+                    _vm._v(" "),
+                    _c("td", { attrs: { colspan: "2" } }, [_vm._v("TAX 25%")]),
+                    _vm._v(" "),
+                    _c("td", [_vm._v(_vm._s(_vm.taxPrice))])
+                  ]),
+                  _vm._v(" "),
+                  _c("tr", [
+                    _c("td", { attrs: { colspan: "2" } }),
+                    _vm._v(" "),
+                    _c("td", { attrs: { colspan: "2" } }, [
+                      _vm._v("GRAND TOTAL")
+                    ]),
+                    _vm._v(" "),
+                    _c("td", [_vm._v(_vm._s(_vm.totalPrice))])
+                  ])
+                ])
               ]
             ),
             _vm._v(" "),
-            _c("div", { staticClass: "thanks" }, [_vm._v("Thank you!")]),
+            _c("div", { staticClass: "thanks" }, [
+              _vm._v("\n                    Thank you!\n                ")
+            ]),
             _vm._v(" "),
-            _vm._m(4)
+            _vm._m(3),
+            _vm._v(" "),
+            _vm.loading == false
+              ? _c(
+                  "div",
+                  {
+                    staticClass: "btn btn-success mt-2",
+                    on: { click: _vm.saveInvoice }
+                  },
+                  [
+                    _vm._v(
+                      "\n                    Save Invoice\n                "
+                    )
+                  ]
+                )
+              : _vm._e(),
+            _vm._v(" "),
+            _vm.loading == true
+              ? _c("div", { staticClass: "btn btn-secondary" }, [
+                  _vm._v("\n                    Loading\n                ")
+                ])
+              : _vm._e()
           ]),
           _vm._v(" "),
           _c("footer", [
@@ -38082,38 +38238,16 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "row contacts" }, [
-      _c("div", { staticClass: "col invoice-to" }, [
-        _c("div", { staticClass: "text-gray-light" }, [_vm._v("INVOICE TO:")]),
-        _vm._v(" "),
-        _c("h2", { staticClass: "to" }, [_vm._v("John Doe")]),
-        _vm._v(" "),
-        _c("div", { staticClass: "address" }, [_vm._v("The other street")]),
-        _vm._v(" "),
-        _c("div", { staticClass: "email" }, [
-          _c("a", { attrs: { href: "mailto:john@example.com" } }, [
-            _vm._v("john@example.com")
-          ])
-        ])
-      ]),
+    return _c("div", { staticClass: "col invoice-to" }, [
+      _c("div", { staticClass: "text-gray-light" }, [_vm._v("INVOICE TO:")]),
       _vm._v(" "),
-      _c("div", { staticClass: "col invoice-details" }, [
-        _c("h1", { staticClass: "invoice-id" }, [
-          _vm._v(
-            "\n                            INVOICE {INSERT REFERENCE HERE}\n                        "
-          )
-        ]),
-        _vm._v(" "),
-        _c("div", { staticClass: "date" }, [
-          _vm._v(
-            "\n                            Date of Invoice: {INSERT DATE OF INVOICE HERE}\n                        "
-          )
-        ]),
-        _vm._v(" "),
-        _c("div", { staticClass: "date" }, [
-          _vm._v(
-            "\n                            Due Date: {INSERT DATE OF INVOICE HERE + 14\n                            DAYS}\n                        "
-          )
+      _c("h2", { staticClass: "to" }, [_vm._v("John Doe")]),
+      _vm._v(" "),
+      _c("div", { staticClass: "address" }, [_vm._v("The other street")]),
+      _vm._v(" "),
+      _c("div", { staticClass: "email" }, [
+        _c("a", { attrs: { href: "mailto:john@example.com" } }, [
+          _vm._v("john@example.com")
         ])
       ])
     ])
@@ -38132,37 +38266,9 @@ var staticRenderFns = [
         _vm._v(" "),
         _c("th", { staticClass: "text-right" }, [_vm._v("QUANTITY")]),
         _vm._v(" "),
-        _c("th", { staticClass: "text-right" }, [_vm._v("TOTAL")])
-      ])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("tfoot", [
-      _c("tr", [
-        _c("td", { attrs: { colspan: "2" } }),
+        _c("th", { staticClass: "text-right" }, [_vm._v("TOTAL")]),
         _vm._v(" "),
-        _c("td", { attrs: { colspan: "2" } }, [_vm._v("SUBTOTAL")]),
-        _vm._v(" "),
-        _c("td", [_vm._v("{TOTAL SUBTRACTED BY 25%}")])
-      ]),
-      _vm._v(" "),
-      _c("tr", [
-        _c("td", { attrs: { colspan: "2" } }),
-        _vm._v(" "),
-        _c("td", { attrs: { colspan: "2" } }, [_vm._v("TAX 25%")]),
-        _vm._v(" "),
-        _c("td", [_vm._v("{25% OF TOTAL}")])
-      ]),
-      _vm._v(" "),
-      _c("tr", [
-        _c("td", { attrs: { colspan: "2" } }),
-        _vm._v(" "),
-        _c("td", { attrs: { colspan: "2" } }, [_vm._v("GRAND TOTAL")]),
-        _vm._v(" "),
-        _c("td", [_vm._v("{TOTAL}")])
+        _c("th", { staticClass: "text-right" }, [_vm._v("ACTION")])
       ])
     ])
   },

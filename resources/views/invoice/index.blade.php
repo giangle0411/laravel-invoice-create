@@ -9,9 +9,10 @@
 	<div class="container mt-2">
 		<div>
 			<h3>Invoices</h3>
-			<div class="btn btn-primary">Invoice 1</div>
-			<div class="btn btn-primary">Invoice 2</div>
-			<div class="btn btn-primary">Invoice 3</div>
+
+			@foreach($invoices as $invoice)
+			<div class="btn btn-primary">Invoice {{$invoice->id}}</div>
+			@endforeach
 		</div>
 		<div class="mt-4">
 			<a href="/invoice/create" class="btn btn-success">Create Invoice</a>
